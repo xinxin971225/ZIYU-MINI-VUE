@@ -11,12 +11,35 @@ describe("effect", () => {
     let nextAge;
     // 依赖搜集会先去执行一遍，才能够出发依赖搜集
     effect(() => {
-      nextAge = user.age + 1;
+      nextAge = user.age;
     });
-    expect(nextAge).toBe(11);
+    // 依赖调用过一次的
+    expect(nextAge).toBe(10);
 
     // update
     user.age++;
-    expect(nextAge).toBe(12);
+    expect(nextAge).toBe(11);
+    const user2 = reactive({
+      age2: 11,
+    });
+    let newnextAge;
+    effect(() => {
+      newnextAge = user2.age2;
+    });
+    expect(newnextAge).toBe(11);
+    user2.age2++;
+    expect(newnextAge).toBe(12);
+  });
+
+  it("should return runner when call effect", () => {
+    let foo = 10;
+    const runner = effect(() => {
+      foo++;
+      return "foo";
+    });
+    expect(foo).toBe(11);
+    const r = runner();
+    expect(foo).toBe(12);
+    expect(r).toBe("foo");
   });
 });

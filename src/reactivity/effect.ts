@@ -1,12 +1,12 @@
 let activeEffect;
 class ReactiveEffect {
-  private _fn: any;
+  private _fn;
   constructor(fn) {
     this._fn = fn;
   }
   run() {
     activeEffect = this;
-    this._fn();
+    return this._fn();
   }
 }
 
@@ -44,4 +44,5 @@ export const effect = (fn) => {
   const _effects = new ReactiveEffect(fn);
   // 这里存起来跑一下触发reactive的get
   _effects.run();
+  return _effects.run.bind(_effects);
 };

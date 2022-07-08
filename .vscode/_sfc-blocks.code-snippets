@@ -1,6 +1,6 @@
 {
-  "jest-test":{
-    "prefix": "jest-test",
+  "test":{
+    "prefix": "test",
     "body":[
       "describe('${0}', () => {",
       "\tit('', () => {",
@@ -9,5 +9,21 @@
       "})"
     ],
     "description": "Unit test block"
-  }
+  },
+  "it-test":{
+    "prefix": "it",
+    "body":[
+      "it('', () => {",
+      "\t expect().toBe()",
+      "})",
+    ],
+    "description": "Unit test block"
+  },
+  "expect-test":{
+    "prefix": "expect",
+    "body":[
+      "expect().toBe()",
+    ],
+    "description": "Unit test block"
+  },
 }
