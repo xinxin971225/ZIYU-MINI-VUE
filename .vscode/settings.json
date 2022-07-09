@@ -1,6 +1,6 @@
 {
   "jest.autoRun": {
-    "watch": false,
+    "watch": true,
     "onSave": "test-file",
     "onStartup": ["all-tests"]
   }

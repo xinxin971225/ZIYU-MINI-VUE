@@ -1,12 +1,31 @@
-let activeEffect;
 class ReactiveEffect {
   private _fn;
-  constructor(fn, public scheduler?) {
+  deps = [];
+  onStop: Function | undefined;
+  active: Boolean = true;
+  constructor(fn) {
     this._fn = fn;
   }
   run() {
     activeEffect = this;
-    return this._fn();
+    const fnData = this._fn();
+    activeEffect = null;
+    return fnData;
+  }
+  stop() {
+    if (this.active) {
+      cleanupEffect(this);
+      this.active = false;
+    }
+  }
+}
+
+function cleanupEffect(effect) {
+  effect.deps.forEach((dep: any) => {
+    dep.delete(effect);
+  });
+  if (effect.onStop) {
+    effect.onStop();
   }
 }
 
@@ -28,7 +47,9 @@ export const track = (target, key) => {
     dep = new Set();
     depsMap.set(key, dep);
   }
+  if (!activeEffect) return;
   dep.add(activeEffect);
+  activeEffect.deps.push(dep);
 };
 
 export const trigger = (target, key) => {
@@ -42,11 +63,19 @@ export const trigger = (target, key) => {
     }
   });
 };
+let activeEffect;
 
 // 收集依赖，找个地给存喽
-export const effect = (fn, options: any = {}) => {
-  const _effects = new ReactiveEffect(fn, options.scheduler);
+export function effect(fn, options: any = {}) {
+  const _effect = new ReactiveEffect(fn);
   // 这里存起来跑一下触发reactive的get
-  _effects.run();
-  return _effects.run.bind(_effects);
-};
+  _effect.run();
+  Object.assign(_effect, options);
+  const runner: any = _effect.run.bind(_effect);
+  runner.effects = _effect;
+  return runner;
+}
+
+export function stop(runner) {
+  runner.effects.stop();
+}
