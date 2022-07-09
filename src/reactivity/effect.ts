@@ -1,7 +1,7 @@
 let activeEffect;
 class ReactiveEffect {
   private _fn;
-  constructor(fn) {
+  constructor(fn, public scheduler?) {
     this._fn = fn;
   }
   run() {
@@ -35,13 +35,17 @@ export const trigger = (target, key) => {
   let depsMap = targetMaps.get(target);
   let dep = depsMap.get(key);
   dep.forEach((effect) => {
-    effect.run();
+    if (effect.scheduler) {
+      effect.scheduler();
+    } else {
+      effect.run();
+    }
   });
 };
 
 // 收集依赖，找个地给存喽
-export const effect = (fn) => {
-  const _effects = new ReactiveEffect(fn);
+export const effect = (fn, options: any = {}) => {
+  const _effects = new ReactiveEffect(fn, options.scheduler);
   // 这里存起来跑一下触发reactive的get
   _effects.run();
   return _effects.run.bind(_effects);
