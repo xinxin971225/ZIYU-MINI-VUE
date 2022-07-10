@@ -1,11 +1,18 @@
 import { track, trigger } from "./effect";
-
+import { activeTypeFlags } from "./reactive";
 const get = createGetter();
 const set = createSetter();
 const readonlyGet = createGetter(true);
+
 function createGetter(readonly = false) {
   return function get(target, key) {
     const value = Reflect.get(target, key);
+    // 采用离谱命名的自定义字段进行判断是否能get到，这样其实会有被覆盖的风险
+    if (key === activeTypeFlags.IS_REACTIVE) {
+      return !readonly;
+    } else if (key === activeTypeFlags.IS_READONLY) {
+      return readonly;
+    }
     // 收集
     if (!readonly) {
       track(target, key);

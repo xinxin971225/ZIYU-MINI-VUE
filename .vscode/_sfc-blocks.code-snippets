@@ -20,7 +20,7 @@
     "description": "Unit test block"
   },
   "expect-test":{
-    "prefix": "expect",
+    "prefix": "exp",
     "body":[
       "expect().toBe()",
     ],
