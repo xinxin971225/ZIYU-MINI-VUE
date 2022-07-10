@@ -47,3 +47,7 @@ export const isReactive = (obj) => {
 export const isReadonly = (obj) => {
   return !!obj[activeTypeFlags.IS_READONLY];
 };
+
+export const isProxy = (obj) => {
+  return isReadonly(obj) || isReactive(obj);
+};

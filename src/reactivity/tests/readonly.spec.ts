@@ -1,4 +1,4 @@
-import { readonly, isReadonly } from "../reactive";
+import { readonly, isReadonly, isProxy } from "../reactive";
 describe("readonly", () => {
   it("happy path", () => {
     const originVal = { foo: "1" };
@@ -6,6 +6,8 @@ describe("readonly", () => {
     expect(readonlyValue).not.toBe(originVal);
     expect(readonlyValue.foo).toBe("1");
     expect(isReadonly(readonlyValue)).toBe(true);
+    expect(isProxy(readonlyValue)).toBe(true);
+
     expect(isReadonly(originVal)).toBe(false);
   });
   it("支持嵌套复杂数据类型的 readonly", () => {
