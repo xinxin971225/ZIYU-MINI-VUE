@@ -1,11 +1,12 @@
-import { isObject } from "../share";
+import { isObject, extend } from "../share";
 import { track, trigger } from "./effect";
 import { activeTypeFlags, reactive, readonly } from "./reactive";
 const get = createGetter();
 const set = createSetter();
 const readonlyGet = createGetter(true);
+const shallowReadonlyGet = createGetter(true, true);
 
-function createGetter(isReadonly = false) {
+function createGetter(isReadonly = false, isShallowReadonly = false) {
   return function get(target, key) {
     // 采用离谱命名的自定义字段进行判断是否能get到，这样其实会有被覆盖的风险
 
@@ -14,11 +15,14 @@ function createGetter(isReadonly = false) {
     } else if (key === activeTypeFlags.IS_READONLY) {
       return isReadonly;
     }
+    let value = Reflect.get(target, key);
+    if (isShallowReadonly) {
+      return value;
+    }
     // 收集
     if (!isReadonly) {
       track(target, key);
     }
-    let value = Reflect.get(target, key);
 
     // reactive与readonly是支持嵌套结构的 ，所以这里如果是复杂类型就给她进行转为reactive
     if (isObject(value)) {
@@ -49,3 +53,7 @@ export const readonlyBaseHandlers = {
     return true;
   },
 };
+
+export const shallowReadonlyBaseHandlers = extend({}, readonlyBaseHandlers, {
+  get: shallowReadonlyGet,
+});

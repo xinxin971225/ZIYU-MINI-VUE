@@ -1,3 +1,4 @@
+import { extend } from "../share/index";
 let activeEffect;
 
 /**
@@ -86,7 +87,7 @@ export function effect(fn, options: any = {}) {
   const _effect = new ReactiveEffect(fn);
   // 这里存起来跑一下触发reactive的get
   _effect.run();
-  Object.assign(_effect, options); //将所有配置项都存在当前effect方便建立与effect的联系后读取到配置
+  extend(_effect, options); //将所有配置项都存在当前effect方便建立与effect的联系后读取到配置
   const runner: any = _effect.run.bind(_effect);
   // 这里建立起runner与_effect的关联，而不是runner与stop的关联去实现stop功能可以更好的应对后面对effect的拓展在runner那里读取得到
   runner.effect = _effect;
