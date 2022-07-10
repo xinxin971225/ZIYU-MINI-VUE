@@ -35,8 +35,22 @@ export const isRef = (ref) => {
 };
 
 export const unRef = (ref) => {
-  if (isRef(ref)) {
-    return ref.value;
-  }
-  return ref;
+  return isRef(ref) ? ref.value : ref;
 };
+
+export function proxysRefs(obj) {
+  return new Proxy(obj, {
+    get(target, key) {
+      return unRef(Reflect.get(target, key));
+    },
+    set(target, key, newValue) {
+      // 如果原始属性是一个ref，新属性不是ref，那么应该对原始属性的.value赋值
+      if (!isRef(newValue) && isRef(target[key])) {
+        return Reflect.set(target[key], "value", newValue);
+      }
+      // 如果原始属性是一个ref，新属性是ref，那么需要对属性做直接替换。
+      // 如果原始属性不是一个ref，新属性不是ref，那么应该对原始属性赋值
+      return Reflect.set(target, key, newValue);
+    },
+  });
+}
