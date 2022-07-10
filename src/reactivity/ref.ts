@@ -5,6 +5,7 @@ import { reactive } from "./reactive";
 class RefImpl {
   private _value;
   public deps = new Set();
+  public __v_isRef = true;
   constructor(value) {
     this._value = convert(value);
   }
@@ -27,4 +28,15 @@ export function convert(value) {
 
 export const ref = (value) => {
   return new RefImpl(value);
+};
+
+export const isRef = (ref) => {
+  return !!ref.__v_isRef;
+};
+
+export const unRef = (ref) => {
+  if (isRef(ref)) {
+    return ref.value;
+  }
+  return ref;
 };
