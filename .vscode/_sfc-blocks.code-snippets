@@ -11,7 +11,7 @@
     "description": "Unit test block"
   },
   "it-test":{
-    "prefix": "it",
+    "prefix": "itt",
     "body":[
       "it('', () => {",
       "\t expect().toBe()",

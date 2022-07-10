@@ -1,21 +1,28 @@
+import { isObject } from "../share";
 import { track, trigger } from "./effect";
-import { activeTypeFlags } from "./reactive";
+import { activeTypeFlags, reactive, readonly } from "./reactive";
 const get = createGetter();
 const set = createSetter();
 const readonlyGet = createGetter(true);
 
-function createGetter(readonly = false) {
+function createGetter(isReadonly = false) {
   return function get(target, key) {
-    const value = Reflect.get(target, key);
     // 采用离谱命名的自定义字段进行判断是否能get到，这样其实会有被覆盖的风险
+
     if (key === activeTypeFlags.IS_REACTIVE) {
-      return !readonly;
+      return !isReadonly;
     } else if (key === activeTypeFlags.IS_READONLY) {
-      return readonly;
+      return isReadonly;
     }
     // 收集
-    if (!readonly) {
+    if (!isReadonly) {
       track(target, key);
+    }
+    let value = Reflect.get(target, key);
+
+    // reactive与readonly是支持嵌套结构的 ，所以这里如果是复杂类型就给她进行转为reactive
+    if (isObject(value)) {
+      return isReadonly ? readonly(value) : reactive(value);
     }
     return value;
   };

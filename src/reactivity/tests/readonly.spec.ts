@@ -8,7 +8,14 @@ describe("readonly", () => {
     expect(isReadonly(readonlyValue)).toBe(true);
     expect(isReadonly(originVal)).toBe(false);
   });
-
+  it("支持嵌套复杂数据类型的 readonly", () => {
+    const originVal = { foo: { bar: { data: "1" } }, arr: [{ foo: 666 }] };
+    const readonlyValue = readonly(originVal);
+    expect(isReadonly(readonlyValue.foo)).toBe(true);
+    expect(isReadonly(readonlyValue.foo.bar)).toBe(true);
+    expect(isReadonly(readonlyValue.arr)).toBe(true);
+    expect(isReadonly(readonlyValue.arr[0])).toBe(true);
+  });
   it("set key should be warn", () => {
     console.warn = jest.fn(() => {});
     const originVal = { foo: "1" };

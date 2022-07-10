@@ -1,3 +1,5 @@
+let activeEffect;
+
 /**
  * 靓仔依赖收集工厂
  * 如果说不用这种形式的话，每次收集到依赖的方法effect内部逻辑会非常复杂且不好建立联系
@@ -39,6 +41,8 @@ function cleanupEffect(effect) {
 
 const targetMaps = new Map();
 export const track = (target, key) => {
+  if (!activeEffect) return;
+
   // 需要通过target去找到对应的key所对应的effect
   // effect需要进行去重所以采用set =》es6
   // target上不希望被修改到，但是又需要target与key直接建立联系，这里可以采用map
@@ -55,7 +59,7 @@ export const track = (target, key) => {
     dep = new Set();
     depsMap.set(key, dep);
   }
-  if (!activeEffect) return;
+  if (dep.has(activeEffect)) return;
   // 这里建立起dep对activeEffect的引用，用于trigger
   dep.add(activeEffect);
   // 这里建立起activeEffect对dep的引用，用于stop掉它
@@ -64,8 +68,9 @@ export const track = (target, key) => {
 
 export const trigger = (target, key) => {
   let depsMap = targetMaps.get(target);
+  if (!depsMap) return;
   let dep = depsMap.get(key);
-  dep.forEach((effect) => {
+  (dep || []).forEach((effect) => {
     if (effect.scheduler) {
       // 因为trigger在第一次获取effect时并不会执行，所以这里的效果算是替换掉原本fn
       // 不过如果不说或者没看到这里的逻辑，并不会知道有这么一个配置项
@@ -75,7 +80,6 @@ export const trigger = (target, key) => {
     }
   });
 };
-let activeEffect;
 
 // 收集依赖，找个地给存喽
 export function effect(fn, options: any = {}) {
