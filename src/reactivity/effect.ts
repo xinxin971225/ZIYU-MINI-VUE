@@ -5,7 +5,7 @@ let activeEffect;
  * 靓仔依赖收集工厂
  * 如果说不用这种形式的话，每次收集到依赖的方法effect内部逻辑会非常复杂且不好建立联系
  */
-class ReactiveEffect {
+export class ReactiveEffect {
   private _fn;
   deps = [];
   onStop: Function | undefined;
