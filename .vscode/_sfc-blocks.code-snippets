@@ -13,7 +13,7 @@
   "it-test":{
     "prefix": "itt",
     "body":[
-      "it('', () => {",
+      "it('${0}', () => {",
       "\t expect().toBe()",
       "})",
     ],
@@ -22,7 +22,7 @@
   "expect-test":{
     "prefix": "exp",
     "body":[
-      "expect().toBe()",
+      "expect(${0}).toBe()",
     ],
     "description": "Unit test block"
   },

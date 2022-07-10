@@ -33,6 +33,8 @@ function createGetter(isReadonly = false, isShallowReadonly = false) {
 }
 function createSetter() {
   return function set(target, key, newVal) {
+    const oldVal = target[key];
+    if (oldVal === newVal) return true;
     const value = Reflect.set(target, key, newVal);
     // 触发调用
     trigger(target, key);

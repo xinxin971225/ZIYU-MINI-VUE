@@ -19,16 +19,6 @@ describe("effect", () => {
     // update
     user.age++;
     expect(nextAge).toBe(11);
-    const user2 = reactive({
-      age2: 11,
-    });
-    let newnextAge;
-    effect(() => {
-      newnextAge = user2.age2;
-    });
-    expect(newnextAge).toBe(11);
-    user2.age2++;
-    expect(newnextAge).toBe(12);
   });
 
   it("should return runner when call effect", () => {

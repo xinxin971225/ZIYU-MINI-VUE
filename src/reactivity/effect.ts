@@ -40,9 +40,13 @@ function cleanupEffect(effect) {
   }
 }
 
+export const isTracking = () => {
+  return !!activeEffect;
+};
+
 const targetMaps = new Map();
 export const track = (target, key) => {
-  if (!activeEffect) return;
+  if (!isTracking()) return;
 
   // 需要通过target去找到对应的key所对应的effect
   // effect需要进行去重所以采用set =》es6
@@ -60,17 +64,24 @@ export const track = (target, key) => {
     dep = new Set();
     depsMap.set(key, dep);
   }
+  trackEffects(dep);
+};
+export function trackEffects(dep) {
   if (dep.has(activeEffect)) return;
   // 这里建立起dep对activeEffect的引用，用于trigger
   dep.add(activeEffect);
   // 这里建立起activeEffect对dep的引用，用于stop掉它
   activeEffect.deps.push(dep);
-};
+}
 
 export const trigger = (target, key) => {
   let depsMap = targetMaps.get(target);
   if (!depsMap) return;
   let dep = depsMap.get(key);
+  triggerEffects(dep);
+};
+
+export function triggerEffects(dep) {
   (dep || []).forEach((effect) => {
     if (effect.scheduler) {
       // 因为trigger在第一次获取effect时并不会执行，所以这里的效果算是替换掉原本fn
@@ -80,7 +91,7 @@ export const trigger = (target, key) => {
       effect.run();
     }
   });
-};
+}
 
 // 收集依赖，找个地给存喽
 export function effect(fn, options: any = {}) {
