@@ -1,10 +1,12 @@
 {
   "name": "ZIYU-MINI-VUE",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "lib/ziyu-mini-vue.cjs.js",
+  "module": "lib/ziyu-mini-vue.esm.js",
   "license": "MIT",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "rollup -c rollup.config.js"
   },
   "devDependencies": {
     "@babel/core": "^7.18.6",
@@ -13,6 +15,11 @@
     "@types/jest": "^28.1.4",
     "babel-jest": "^28.1.2",
     "jest": "^28.1.2",
+    "tslib": "^2.4.0",
     "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "@rollup/plugin-typescript": "^8.3.3",
+    "rollup": "^2.76.0"
   }
 }
