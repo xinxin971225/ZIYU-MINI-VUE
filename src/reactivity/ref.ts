@@ -1,4 +1,4 @@
-import { isObject } from "../share";
+import { isObject, hasChangeed } from "../share";
 import { isTracking, trackEffects, triggerEffects } from "./effect";
 import { reactive } from "./reactive";
 
@@ -16,9 +16,10 @@ class RefImpl {
     return this._value;
   }
   set value(newValue) {
-    if (newValue === this._value) return;
-    this._value = convert(newValue);
-    triggerEffects(this.deps);
+    if (hasChangeed(newValue, this._value)) {
+      this._value = convert(newValue);
+      triggerEffects(this.deps);
+    }
   }
 }
 
