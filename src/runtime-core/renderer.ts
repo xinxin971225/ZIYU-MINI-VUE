@@ -34,14 +34,21 @@ function mountElement(vnode, container) {
   // document.body.append(el)
   const el = (vnode.el = document.createElement(vnode.type));
   const { props, children, shapeFlag } = vnode;
+  // children
   if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     el.textContent = children;
   } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
     mountChildren(vnode, el);
   }
+  // props
   for (let key in props) {
     const val = props[key];
-    el.setAttribute(key, val);
+    if (/^on[A-Z]/.test(key)) {
+      const event = key.slice(2).toLocaleLowerCase();
+      el.addEventListener(event, val);
+    } else {
+      el.setAttribute(key, val);
+    }
   }
   container.append(el);
 }

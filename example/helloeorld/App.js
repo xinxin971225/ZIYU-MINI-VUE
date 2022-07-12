@@ -13,6 +13,12 @@ export const App = {
       {
         id: "root",
         class: ["app"],
+        onClick: () => {
+          console.log("onclick");
+        },
+        onMouseDown: () => {
+          console.log("onMouseDown");
+        },
       },
       [
         h("p", { class: ["red"] }, "hello"),
