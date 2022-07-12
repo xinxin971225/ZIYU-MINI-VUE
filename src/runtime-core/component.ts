@@ -1,15 +1,19 @@
 import { shallowReadonly } from "../reactivity/reactive";
+import { emit } from "./componentEmit";
 import { initProps } from "./componentProps";
 import { componentPublicInstanceHandlers } from "./componentPublicInstance";
 
 export function createComponentInstance(vnode: any) {
-  const component = {
+  const component: any = {
     vnode,
     type: vnode.type,
     proxy: null,
     props: {},
     setupState: {},
+    emit: () => {},
   };
+  // 小技巧，通过bind返回的函数第一个参数就是component，在传入的都往后排
+  component.emit = emit.bind(null, component);
   return component;
 }
 
@@ -33,8 +37,10 @@ function setupStatefulComponent(instance: any) {
   );
   const { setup } = Component;
   if (setup) {
-    const { props } = instance;
-    const setupResult = setup(shallowReadonly(props));
+    const { props, emit } = instance;
+    const setupResult = setup(shallowReadonly(props), {
+      emit,
+    });
     handleSetupResult(instance, setupResult);
   }
 }

@@ -1,4 +1,4 @@
-import { isObject, extend } from "../share";
+import { isObject, extend } from "../share/index";
 import { track, trigger } from "./effect";
 import { activeTypeFlags, reactive, readonly } from "./reactive";
 const get = createGetter();
