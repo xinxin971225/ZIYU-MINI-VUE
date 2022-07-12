@@ -31,7 +31,7 @@ function mountElement(vnode, container) {
   // el.textContent = 'hi'
   // el.setAttribute('id','root')
   // document.body.append(el)
-  const el = document.createElement(vnode.type);
+  const el = (vnode.el = document.createElement(vnode.type));
   const { props, children } = vnode;
   if (typeof children === "string") {
     el.textContent = children;
@@ -62,18 +62,29 @@ function processComponent(vnode, container) {
 }
 /**
  * 挂在组件
+ * 所有方法公用一个instance
  */
-function mountComponent(vnode, container) {
-  const instance = createComponentInstance(vnode);
+function mountComponent(initialVNode, container) {
+  const instance = createComponentInstance(initialVNode);
+
   setupComponent(instance);
 
-  setupRenderEffect(instance, container);
+  setupRenderEffect(instance, initialVNode, container);
 }
 
-function setupRenderEffect(instance: any, container) {
-  const subTree = instance.render();
+function setupRenderEffect(instance: any, initialVNode, container) {
+  const { proxy } = instance;
+  const subTree = instance.render.call(proxy);
 
-  // vnode ->patch
-  // vnode ->element ->mountElement
+  // initialVNode ->patch
+  // initialVNode ->element ->mountElement
   patch(subTree, container);
+  //$el读取的是当前组件的dom 也就是说patch到element到时候直接内部的el挂到当前的instance上就ok鸟
+  // instance.el = subTree.el;
+  // 如果说每个组件都需要一个div做根，那这个做发一定能在每个组件都访问到divel；
+  // 但是vue3不需要根div，所以能不能拿到还得再测
+
+  // 崔大推荐赋值到initialVNode上
+  // 初始化的时候el就是放在vnode的这个数据体上，所以保持一致的话还是赋值到instance的vnode上而不是instance上
+  initialVNode.el = subTree.el;
 }
