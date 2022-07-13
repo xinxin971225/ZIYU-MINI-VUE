@@ -4,7 +4,7 @@ import { initProps } from "./componentProps";
 import { componentPublicInstanceHandlers } from "./componentPublicInstance";
 import { initSlots } from "./componentSlots";
 let currentInstance = null;
-export function createComponentInstance(vnode: any) {
+export function createComponentInstance(vnode: any, parentsInstance) {
   const component: any = {
     vnode,
     type: vnode.type,
@@ -13,6 +13,9 @@ export function createComponentInstance(vnode: any) {
     setupState: {},
     emit: () => {},
     slots: [],
+    // 这里虽然采用结构能够实现一样的功能，但是十分的消耗内存
+    provides: parentsInstance ? parentsInstance.provides : {},
+    parents: parentsInstance,
   };
   // 小技巧，通过bind返回的函数第一个参数就是component，在传入的都往后排
   component.emit = emit.bind(null, component);

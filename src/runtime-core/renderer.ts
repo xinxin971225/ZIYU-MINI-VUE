@@ -6,47 +6,47 @@ export function render(vnode, container) {
   // patch
   // 方便递归
 
-  patch(vnode, container);
+  patch(vnode, container, null);
 }
 
-function patch(vnode, container) {
+function patch(vnode, container, parentsInstance) {
   // 处理组件
   // 判断 是不是element -》 去processElement
   //  如果是一个element那么type =》string
   const { shapeFlag, type } = vnode;
   switch (type) {
     case Fragment:
-      processFragment(vnode, container);
+      processFragment(vnode, container, parentsInstance);
       break;
     case Text:
       processText(vnode, container);
       break;
     default:
       if (shapeFlag & ShapeFlags.ELEMENT) {
-        processElement(vnode, container);
+        processElement(vnode, container, parentsInstance);
       } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-        processComponent(vnode, container);
+        processComponent(vnode, container, parentsInstance);
       }
       break;
   }
 }
 
 function processText(vnode: any, container: any) {
-  const textNode = document.createTextNode(vnode.children);
+  const textNode = (vnode.el = document.createTextNode(vnode.children));
   container.append(textNode);
 }
 
-function processFragment(vnode: any, container: any) {
-  mountChildren(vnode, container);
+function processFragment(vnode: any, container: any, parentsInstance) {
+  mountChildren(vnode, container, parentsInstance);
 }
 
-function processElement(vnode: any, container: any) {
+function processElement(vnode: any, container: any, parentsInstance) {
   // 挂载
-  mountElement(vnode, container);
+  mountElement(vnode, container, parentsInstance);
   // TODO更新
 }
 
-function mountElement(vnode, container) {
+function mountElement(vnode, container, parentsInstance) {
   // 正常流程
   // const el = document.createElement('div')
   // el.textContent = 'hi'
@@ -58,7 +58,7 @@ function mountElement(vnode, container) {
   if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     el.textContent = children;
   } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-    mountChildren(vnode, el);
+    mountChildren(vnode, el, parentsInstance);
   }
   // props
   for (let key in props) {
@@ -73,9 +73,9 @@ function mountElement(vnode, container) {
   container.append(el);
 }
 
-function mountChildren(vnode, container) {
+function mountChildren(vnode, container, parentsInstance) {
   vnode.children.forEach((vnode) => {
-    patch(vnode, container);
+    patch(vnode, container, parentsInstance);
   });
 }
 /**
@@ -83,17 +83,17 @@ function mountChildren(vnode, container) {
  * @param vnode
  * @param container
  */
-function processComponent(vnode, container) {
+function processComponent(vnode, container, parentsInstance) {
   // 挂载
-  mountComponent(vnode, container);
+  mountComponent(vnode, container, parentsInstance);
   // TODO更新
 }
 /**
  * 挂在组件
  * 所有方法公用一个instance
  */
-function mountComponent(initialVNode, container) {
-  const instance = createComponentInstance(initialVNode);
+function mountComponent(initialVNode, container, parentsInstance) {
+  const instance = createComponentInstance(initialVNode, parentsInstance);
 
   setupComponent(instance);
 
@@ -106,7 +106,7 @@ function setupRenderEffect(instance: any, initialVNode, container) {
 
   // initialVNode ->patch
   // initialVNode ->element ->mountElement
-  patch(subTree, container);
+  patch(subTree, container, instance);
   //$el读取的是当前组件的dom 也就是说patch到element到时候直接内部的el挂到当前的instance上就ok鸟
   // instance.el = subTree.el;
   // 如果说每个组件都需要一个div做根，那这个做发一定能在每个组件都访问到divel；
