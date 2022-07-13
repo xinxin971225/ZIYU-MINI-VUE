@@ -2,6 +2,7 @@ import { hasOwn } from "../share/index";
 
 const publicFuncMap = {
   $el: (i) => i.vnode.el,
+  $slots: (i) => i.slots,
 };
 
 export const componentPublicInstanceHandlers = {

@@ -2,6 +2,7 @@ import { shallowReadonly } from "../reactivity/reactive";
 import { emit } from "./componentEmit";
 import { initProps } from "./componentProps";
 import { componentPublicInstanceHandlers } from "./componentPublicInstance";
+import { initSlots } from "./componentSlots";
 
 export function createComponentInstance(vnode: any) {
   const component: any = {
@@ -11,6 +12,7 @@ export function createComponentInstance(vnode: any) {
     props: {},
     setupState: {},
     emit: () => {},
+    slots: [],
   };
   // 小技巧，通过bind返回的函数第一个参数就是component，在传入的都往后排
   component.emit = emit.bind(null, component);
@@ -19,8 +21,7 @@ export function createComponentInstance(vnode: any) {
 
 export function setupComponent(instance) {
   initProps(instance, instance.vnode.props);
-  // TODO
-  // initSlots()
+  initSlots(instance, instance.vnode.children);
 
   setupStatefulComponent(instance);
 }
