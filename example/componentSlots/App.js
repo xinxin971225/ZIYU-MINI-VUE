@@ -1,5 +1,5 @@
 // 最终结果在页面里面看到hi-minivue - ziyu
-import { h } from "../../lib/ziyu-mini-vue.esm.js";
+import { h, createTextVNode } from "../../lib/ziyu-mini-vue.esm.js";
 import { foo } from "./foo.js";
 window.self = null;
 export const App = {
@@ -30,7 +30,7 @@ export const App = {
               h("p", { class: ["blue"] }, data.count + " header"),
             default: (data) => [
               h("p", { class: ["blue"] }, data.count + " 123"),
-              h("p", { class: ["blue"] }, this.msg + " 999"),
+              createTextVNode(this.msg + " 999"),
             ],
           }
         ),
