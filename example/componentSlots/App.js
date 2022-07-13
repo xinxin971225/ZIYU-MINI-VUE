@@ -1,5 +1,9 @@
 // 最终结果在页面里面看到hi-minivue - ziyu
-import { h, createTextVNode } from "../../lib/ziyu-mini-vue.esm.js";
+import {
+  h,
+  createTextVNode,
+  getCurrentInstance,
+} from "../../lib/ziyu-mini-vue.esm.js";
 import { foo } from "./foo.js";
 window.self = null;
 export const App = {
@@ -38,6 +42,8 @@ export const App = {
     );
   },
   setup() {
+    const instance = getCurrentInstance();
+    console.log("APP", instance);
     // composition api
     return {
       msg: "ziyu-mini-vue 666",

@@ -1,7 +1,15 @@
-import { h, renderSlots } from "../../lib/ziyu-mini-vue.esm.js";
+import {
+  h,
+  renderSlots,
+  getCurrentInstance,
+} from "../../lib/ziyu-mini-vue.esm.js";
 
 export const foo = {
-  setup() {},
+  name: "Foo",
+  setup() {
+    const instance = getCurrentInstance();
+    console.log("Foo", instance);
+  },
   render() {
     //3. render 能直接通过this去读取props
     console.log(this.$slots);

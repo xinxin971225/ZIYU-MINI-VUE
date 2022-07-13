@@ -3,7 +3,7 @@ import { emit } from "./componentEmit";
 import { initProps } from "./componentProps";
 import { componentPublicInstanceHandlers } from "./componentPublicInstance";
 import { initSlots } from "./componentSlots";
-
+let currentInstance = null;
 export function createComponentInstance(vnode: any) {
   const component: any = {
     vnode,
@@ -38,10 +38,12 @@ function setupStatefulComponent(instance: any) {
   );
   const { setup } = Component;
   if (setup) {
+    setCurrentInstance(instance);
     const { props, emit } = instance;
     const setupResult = setup(shallowReadonly(props), {
       emit,
     });
+    setCurrentInstance(null);
     handleSetupResult(instance, setupResult);
   }
 }
@@ -70,4 +72,11 @@ function finishComponentSetup(instance: any) {
   if (Component.render) {
     instance.render = Component.render;
   }
+}
+
+export function getCurrentInstance() {
+  return currentInstance;
+}
+function setCurrentInstance(instance) {
+  currentInstance = instance;
 }
