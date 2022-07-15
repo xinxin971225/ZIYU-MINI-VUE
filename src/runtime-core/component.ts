@@ -13,6 +13,8 @@ export function createComponentInstance(vnode: any, parentsInstance) {
     setupState: {},
     emit: () => {},
     slots: [],
+    isMonuted: false,
+    subTree: {},
     // 这里虽然采用结构能够实现一样的功能，但是十分的消耗内存
     provides: parentsInstance ? parentsInstance.provides : {},
     parents: parentsInstance,

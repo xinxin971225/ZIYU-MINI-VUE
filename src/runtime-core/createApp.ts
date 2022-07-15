@@ -1,5 +1,11 @@
 import { createVNode } from "./vnode";
 
+/**
+ * 由于createRenderer将所有vnode处理方法封装了一层，原本的createApp内部需要的render已经读取不到
+ * 所以这里对默认createApp 封装一层去获取到对应的render，并返回createApp
+ * @param render
+ * @returns
+ */
 export function createAppApi(render) {
   /**
    * @param rootComponent 根组件
