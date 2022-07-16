@@ -62,14 +62,37 @@ export function createRenderer(options) {
       // 挂载
       mountElement(n2, container, parentsInstance);
     } else {
-      patchElement(n1, n2, container, parentsInstance);
+      patchElement(n1, n2);
     }
     // TODO更新
   }
-  function patchElement(n1, n2, container, parentsInstance) {
+  const defaultProps = {};
+  function patchElement(n1, n2) {
     console.log("patchElement");
     console.log("pre", n1);
     console.log("cur", n2);
+    const oldProps = n1.props || defaultProps;
+    const newProps = n2.props || defaultProps;
+    // 这里在第二次更新的时候由于el 只有在mountElement 的时候挂到vnode上所以这里需要为后面更新的vnode挂上前面的el
+    const el = (n2.el = n1.el);
+    patchProps(el, oldProps, newProps);
+  }
+  function patchProps(el, oldProps, newProps) {
+    // 1. 新值，做了有值的变化，应该去修改，否则不管
+    // 2. 新值为undefined或者null需要去删除
+    for (const key in newProps) {
+      const preVal = oldProps[key];
+      const newVal = newProps[key];
+      if (preVal !== newVal) {
+        hostPatchProp(el, key, newVal);
+      }
+    }
+    // 3. 新值没有的需要去删除
+    for (const key in oldProps) {
+      if (!newProps[key]) {
+        hostPatchProp(el, key, null);
+      }
+    }
   }
 
   function mountElement(vnode, container, parentsInstance) {
