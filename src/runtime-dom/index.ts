@@ -26,11 +26,16 @@ function insert(el, container) {
   // console.log("insert");
   container.append(el);
 }
+function setElementText(text, el) {
+  // 这里会直接覆盖元素内部的所有内容所有无需在前面去清楚children
+  el.textContent = text;
+}
 
 const renderer: any = createRenderer({
   createElement,
   patchProp,
   insert,
+  setElementText,
 });
 
 /**

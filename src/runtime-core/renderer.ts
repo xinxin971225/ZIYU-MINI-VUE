@@ -17,6 +17,7 @@ export function createRenderer(options) {
     createElement: hostCreateElement,
     patchProp: hostPatchProp,
     insert: hostInsert,
+    setElementText: hostSetElementText,
   } = options;
   function render(vnode, container) {
     // patch
@@ -54,7 +55,7 @@ export function createRenderer(options) {
   }
 
   function processFragment(n1, n2: any, container: any, parentsInstance) {
-    mountChildren(n2, container, parentsInstance);
+    mountChildren(n2.children, container, parentsInstance);
   }
 
   function processElement(n1, n2: any, container: any, parentsInstance) {
@@ -62,12 +63,12 @@ export function createRenderer(options) {
       // 挂载
       mountElement(n2, container, parentsInstance);
     } else {
-      patchElement(n1, n2);
+      patchElement(n1, n2, parentsInstance);
     }
     // TODO更新
   }
   const defaultProps = {};
-  function patchElement(n1, n2) {
+  function patchElement(n1, n2, parentsInstance) {
     console.log("patchElement");
     console.log("pre", n1);
     console.log("cur", n2);
@@ -75,7 +76,26 @@ export function createRenderer(options) {
     const newProps = n2.props || defaultProps;
     // 这里在第二次更新的时候由于el 只有在mountElement 的时候挂到vnode上所以这里需要为后面更新的vnode挂上前面的el
     const el = (n2.el = n1.el);
+    patchChildren(n1, n2, el, parentsInstance);
     patchProps(el, oldProps, newProps);
+  }
+
+  function patchChildren(n1, n2, container, parentsInstance) {
+    const { shapeFlag: oldShapeFlag } = n1;
+    const { shapeFlag: newShapeFlag } = n2;
+    const c1 = n1.children;
+    const c2 = n2.children;
+    if (newShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      if (c1 !== c2) {
+        hostSetElementText(c2, container);
+      }
+    } else if (newShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+      if (oldShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+        // 因为mountChildren只会append，所以需要把之前的节点清掉
+        hostSetElementText("", container);
+        mountChildren(c2, container, parentsInstance);
+      }
+    }
   }
   function patchProps(el, oldProps, newProps) {
     // 1. 新值，做了有值的变化，应该去修改，否则不管
@@ -104,7 +124,7 @@ export function createRenderer(options) {
     if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
       el.textContent = children;
     } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-      mountChildren(vnode, el, parentsInstance);
+      mountChildren(vnode.children, el, parentsInstance);
     }
     // props
     for (let key in props) {
@@ -114,8 +134,8 @@ export function createRenderer(options) {
     hostInsert(el, container);
   }
 
-  function mountChildren(vnode, container, parentsInstance) {
-    vnode.children.forEach((vnode) => {
+  function mountChildren(children, container, parentsInstance) {
+    children.forEach((vnode) => {
       patch(null, vnode, container, parentsInstance);
     });
   }
