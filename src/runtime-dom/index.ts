@@ -22,13 +22,23 @@ function patchProp(el, key, val) {
     }
   }
 }
-function insert(el, container) {
+function insert(children, parent, anchor) {
   // console.log("insert");
-  container.append(el);
+  // 这个api只会往后面塞元素，如果在前面就挂了
+  // parent.append(el);
+  // insertBefore 可以在anchor（锚点）前面append children，默认给null时就往后塞
+  parent.insertBefore(children, anchor || null);
 }
 function setElementText(text, el) {
   // 这里会直接覆盖元素内部的所有内容所有无需在前面去清楚children
   el.textContent = text;
+}
+
+function removeChildren(child) {
+  const parent = child.parentNode;
+  if (parent) {
+    parent.removeChild(child);
+  }
 }
 
 const renderer: any = createRenderer({
@@ -36,6 +46,7 @@ const renderer: any = createRenderer({
   patchProp,
   insert,
   setElementText,
+  removeChildren,
 });
 
 /**

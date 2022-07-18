@@ -18,14 +18,15 @@ export function createRenderer(options) {
     patchProp: hostPatchProp,
     insert: hostInsert,
     setElementText: hostSetElementText,
+    removeChildren: hostRemoveChildren,
   } = options;
   function render(vnode, container) {
     // patch
     // 方便递归
 
-    patch(null, vnode, container, null);
+    patch(null, vnode, container, null, null);
   }
-  function patch(n1, n2, container, parentsInstance) {
+  function patch(n1, n2, container, parentsInstance, anchor) {
     // initialVNode ->patch
     // initialVNode ->element ->mountElement
     // 处理组件
@@ -41,9 +42,9 @@ export function createRenderer(options) {
         break;
       default:
         if (shapeFlag & ShapeFlags.ELEMENT) {
-          processElement(n1, n2, container, parentsInstance);
+          processElement(n1, n2, container, parentsInstance, anchor);
         } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-          processComponent(n1, n2, container, parentsInstance);
+          processComponent(n1, n2, container, parentsInstance, anchor);
         }
         break;
     }
@@ -58,10 +59,16 @@ export function createRenderer(options) {
     mountChildren(n2.children, container, parentsInstance);
   }
 
-  function processElement(n1, n2: any, container: any, parentsInstance) {
+  function processElement(
+    n1,
+    n2: any,
+    container: any,
+    parentsInstance,
+    anchor
+  ) {
     if (!n1) {
       // 挂载
-      mountElement(n2, container, parentsInstance);
+      mountElement(n2, container, parentsInstance, anchor);
     } else {
       patchElement(n1, n2, parentsInstance);
     }
@@ -94,6 +101,56 @@ export function createRenderer(options) {
         // 因为mountChildren只会append，所以需要把之前的节点清掉
         hostSetElementText("", container);
         mountChildren(c2, container, parentsInstance);
+      } else {
+        patchKeyedChildren(c1, c2, container, parentsInstance);
+      }
+    }
+  }
+  function patchKeyedChildren(c1, c2, container, parentsInstance) {
+    let i = 0;
+    const l2 = c2.length;
+    let e1 = c1.length - 1;
+    let e2 = l2 - 1;
+    function isSomeVNodeType(n1, n2) {
+      return n1.type === n2.type && n1.key === n2.key;
+    }
+    // 从左往右找出相同的 这里小于等于为了找出左边第一个不同的index
+    while (i <= e2 && i <= e1) {
+      const n1 = c1[i];
+      const n2 = c2[i];
+      if (isSomeVNodeType(n1, n2)) {
+        patch(n1, n2, container, parentsInstance, null);
+      } else {
+        break;
+      }
+      i++;
+    }
+    // 从右往左找出相同的 这里小于等于为了找出右边第一个不同的index
+    while (i <= e2 && i <= e1) {
+      const n1 = c1[e1];
+      const n2 = c2[e2];
+      if (isSomeVNodeType(n1, n2)) {
+        patch(n1, n2, container, parentsInstance, null);
+      } else {
+        break;
+      }
+      e1--;
+      e2--;
+    }
+    // 新的比旧的长去添加
+    if (i > e1) {
+      while (i <= e2) {
+        const nextPos = e2 + 1;
+        const anchor = nextPos < l2 ? c2[nextPos].el : null;
+        patch(null, c2[i], container, parentsInstance, anchor);
+        i++;
+      }
+    }
+    // 旧的比新的长去删除
+    if (i > e2) {
+      while (i <= e1) {
+        hostRemoveChildren(c1[i].el);
+        i++;
       }
     }
   }
@@ -115,7 +172,7 @@ export function createRenderer(options) {
     }
   }
 
-  function mountElement(vnode, container, parentsInstance) {
+  function mountElement(vnode, container, parentsInstance, anchor) {
     // 这里是实现custom render的关键，主要流程都在这里
     // 所以把所有特定类型API换成获取形式
     const el = (vnode.el = hostCreateElement(vnode.type));
@@ -131,12 +188,12 @@ export function createRenderer(options) {
       const val = props[key];
       hostPatchProp(el, key, val);
     }
-    hostInsert(el, container);
+    hostInsert(el, container, anchor);
   }
 
   function mountChildren(children, container, parentsInstance) {
     children.forEach((vnode) => {
-      patch(null, vnode, container, parentsInstance);
+      patch(null, vnode, container, parentsInstance, null);
     });
   }
   /**
@@ -144,10 +201,10 @@ export function createRenderer(options) {
    * @param vnode
    * @param container
    */
-  function processComponent(n1, n2, container, parentsInstance) {
+  function processComponent(n1, n2, container, parentsInstance, anchor) {
     if (!n1) {
       // 挂载
-      mountComponent(n2, container, parentsInstance);
+      mountComponent(n2, container, parentsInstance, anchor);
     } else {
       // TODO更新
       patchComponent(n1, n2, container, parentsInstance);
@@ -163,22 +220,22 @@ export function createRenderer(options) {
    * 挂在组件
    * 所有方法公用一个instance
    */
-  function mountComponent(initialVNode, container, parentsInstance) {
+  function mountComponent(initialVNode, container, parentsInstance, anchor) {
     const instance = createComponentInstance(initialVNode, parentsInstance);
 
     setupComponent(instance);
 
-    setupRenderEffect(instance, initialVNode, container);
+    setupRenderEffect(instance, initialVNode, container, anchor);
   }
 
-  function setupRenderEffect(instance: any, initialVNode, container) {
+  function setupRenderEffect(instance: any, initialVNode, container, anchor) {
     effect(() => {
       const { proxy } = instance;
       if (!instance.isMonuted) {
         const subTree = (instance.subTree = instance.render.call(
           proxysRefs(proxy)
         ));
-        patch(null, subTree, container, instance);
+        patch(null, subTree, container, instance, anchor);
         // $el读取的是当前组件的dom 也就是说patch到element到时候直接内部的el挂到当前的instance上就ok鸟
         // instance.el = subTree.el;
         // 如果说每个组件都需要一个div做根，那这个做发一定能在每个组件都访问到div el；
@@ -193,7 +250,7 @@ export function createRenderer(options) {
         const subTree = (instance.subTree = instance.render.call(
           proxysRefs(proxy)
         ));
-        patch(preSubTree, subTree, container, instance);
+        patch(preSubTree, subTree, container, instance, anchor);
         initialVNode.el = subTree.el;
       }
     });
