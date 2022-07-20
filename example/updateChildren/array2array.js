@@ -26,7 +26,7 @@ import { h, ref } from "../../lib/ziyu-mini-vue.esm.js";
 // const oldArr = [h("div", { key: "A" }, "A"), h("div", { key: "B" }, "B")];
 
 // 过滤完左右对比中间
-// (AB)EFG(CD)
+// (AB)EFGX(CD)
 // (AB)FEXN(CD)
 const newArr = [
   h("div", { key: "A" }, "A"),
@@ -34,6 +34,7 @@ const newArr = [
   h("div", { key: "E", id: "next E" }, "E"),
   h("div", { key: "F", id: "next F" }, "F"),
   h("div", { key: "G" }, "G"),
+  h("div", {}, "X"),
   h("div", { key: "C" }, "C"),
   h("div", { key: "D" }, "D"),
 ];
@@ -42,8 +43,7 @@ const oldArr = [
   h("div", { key: "B" }, "B"),
   h("div", { key: "F", id: "pre F" }, "F"),
   h("div", { key: "E", id: "pre E" }, "E"),
-  h("div", { key: "X" }, "X"),
-
+  h("div", {}, "X"),
   h("div", { key: "N" }, "N"),
   h("div", { key: "C" }, "C"),
   h("div", { key: "D" }, "D"),

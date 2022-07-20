@@ -2,6 +2,7 @@ import { proxysRefs } from "../reactivity";
 import { effect } from "../reactivity/effect";
 import { ShapeFlags } from "../share/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
+import { needUpdateProps } from "./componentUpdatePropsUtils";
 import { createAppApi } from "./createApp";
 import { Fragment, Text } from "./vnode";
 
@@ -76,9 +77,6 @@ export function createRenderer(options) {
   }
   const defaultProps = {};
   function patchElement(n1, n2, parentsInstance) {
-    console.log("patchElement");
-    console.log("pre", n1);
-    console.log("cur", n2);
     const oldProps = n1.props || defaultProps;
     const newProps = n2.props || defaultProps;
     // 这里在第二次更新的时候由于el 只有在mountElement 的时候挂到vnode上所以这里需要为后面更新的vnode挂上前面的el
@@ -121,28 +119,36 @@ export function createRenderer(options) {
     function isSomeVNodeType(n1, n2) {
       return n1.type === n2.type && n1.key === n2.key;
     }
-    // 从左往右找出相同的 这里小于等于为了找出左边第一个不同的index
+    let headPatched = false;
+    let tailPatched = false;
     while (i <= e2 && i <= e1) {
-      const n1 = c1[i];
-      const n2 = c2[i];
-      if (isSomeVNodeType(n1, n2)) {
-        patch(n1, n2, container, parentsInstance, null);
-      } else {
-        break;
-      }
-      i++;
-    }
-    // 从右往左找出相同的 这里小于等于为了找出右边第一个不同的index
-    while (i <= e2 && i <= e1) {
+      const p1 = c1[i];
+      const p2 = c2[i];
       const n1 = c1[e1];
       const n2 = c2[e2];
-      if (isSomeVNodeType(n1, n2)) {
-        patch(n1, n2, container, parentsInstance, null);
-      } else {
+      if (!headPatched) {
+        if (isSomeVNodeType(p1, p2)) {
+          // 从左往右找出相同的 这里小于等于为了找出左边第一个不同的index
+          patch(p1, p2, container, parentsInstance, null);
+          i++;
+        } else {
+          headPatched = true;
+        }
+      }
+      if (!tailPatched) {
+        if (isSomeVNodeType(n1, n2)) {
+          // 从右往左找出相同的 这里小于等于为了找出右边第一个不同的index
+
+          patch(n1, n2, container, parentsInstance, null);
+          e1--;
+          e2--;
+        } else {
+          tailPatched = true;
+        }
+      }
+      if (headPatched && tailPatched) {
         break;
       }
-      e1--;
-      e2--;
     }
     // 新的比旧的长去添加
     if (i > e1) {
@@ -159,7 +165,7 @@ export function createRenderer(options) {
         i++;
       }
     } else {
-      // 这里i比e1小也比e2小说明中间的都不同
+      // 这里i比e1小也比e2小说明中间的都不同-> 中间对比
       const nextChildMap = new Map();
       let s1 = i;
       let s2 = i;
@@ -293,22 +299,28 @@ export function createRenderer(options) {
       // 挂载
       mountComponent(n2, container, parentsInstance, anchor);
     } else {
-      // TODO更新
-      patchComponent(n1, n2, container, parentsInstance);
+      patchComponent(n1, n2);
     }
   }
 
-  function patchComponent(n1, n2, container, parentsInstance) {
-    console.log("patchComponent");
-    console.log("n1", n1);
-    console.log("n2", n2);
+  function patchComponent(n1, n2) {
+    if (needUpdateProps(n1, n2)) {
+      // 1. 需要去更新props
+      const instance = (n2.component = n1.component);
+      instance.props = n2.props;
+      // 2. 需要去重新调用render
+      instance.updateRunner();
+    }
   }
   /**
    * 挂在组件
    * 所有方法公用一个instance
    */
   function mountComponent(initialVNode, container, parentsInstance, anchor) {
-    const instance = createComponentInstance(initialVNode, parentsInstance);
+    const instance = (initialVNode.component = createComponentInstance(
+      initialVNode,
+      parentsInstance
+    ));
 
     setupComponent(instance);
 
@@ -316,7 +328,8 @@ export function createRenderer(options) {
   }
 
   function setupRenderEffect(instance: any, initialVNode, container, anchor) {
-    effect(() => {
+    // 将runner丢给instance，在更新时可以调用
+    instance.updateRunner = effect(() => {
       const { proxy } = instance;
       if (!instance.isMonuted) {
         const subTree = (instance.subTree = instance.render.call(
