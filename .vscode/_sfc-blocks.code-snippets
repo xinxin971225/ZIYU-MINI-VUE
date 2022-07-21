@@ -1,6 +1,6 @@
 {
   "test":{
-    "prefix": "test",
+    "prefix": "ttest",
     "body":[
       "describe('${0}', () => {",
       "\tit('', () => {",

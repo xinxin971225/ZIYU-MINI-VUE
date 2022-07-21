@@ -7,32 +7,50 @@ export function baseParse(content: string) {
 
 function parseChildren(context) {
   const nodes: any[] = [];
-  const s = context.source;
-  let node;
-  if (s.startsWith("{{")) {
-    node = parseInterpolation(context);
-  } else if (/^<[a-z]/i.test(s)) {
-    node = parseElement(context);
+  while (!isEnd(context)) {
+    const s = context.source;
+    let node;
+    if (s.startsWith("{{")) {
+      node = parseInterpolation(context);
+    } else if (/^<[a-z]/i.test(s)) {
+      node = parseElement(context);
+    }
+    // default
+    if (!node) {
+      node = parseText(context);
+    }
+    nodes.push(node);
   }
-  // default
-  if (!node) {
-    node = parseText(context);
-  }
-  nodes.push(node);
-
   return nodes;
+}
+function isEnd(context) {
+  const s = context.source;
+  if (s.startsWith("</")) {
+    return true;
+  }
+  return !s;
 }
 
 function parseText(context) {
-  const content = context.source;
-  advanceBy(context, content.length);
+  let endIndex = context.source.length;
+  let endStrs = ["</", "{{"];
+  for (let i = endStrs.length - 1; i >= 0; i--) {
+    const findIndex = context.source.indexOf(endStrs[i]);
+    if (findIndex !== -1 && findIndex < endIndex) {
+      endIndex = findIndex;
+    }
+  }
+
+  const content = context.source.slice(0, endIndex);
+  advanceBy(context, endIndex);
   return {
     type: NodeTypes.TEXT,
     content,
   };
 }
 function parseElement(context) {
-  const element = parseTag(context);
+  const element: any = parseTag(context);
+  element.children = parseChildren(context);
   parseTag(context);
 
   return element;

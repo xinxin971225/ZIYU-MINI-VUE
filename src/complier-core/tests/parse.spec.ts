@@ -1,7 +1,7 @@
 import { NodeTypes } from "../src/ast";
 import { baseParse } from "../src/parse";
 
-describe("Parse", () => {
+describe("simple Parse", () => {
   it(" simple interpolation", () => {
     const ast = baseParse("{{ message }}");
     expect(ast.children[0]).toStrictEqual({
@@ -17,6 +17,7 @@ describe("Parse", () => {
     expect(ast.children[0]).toStrictEqual({
       type: NodeTypes.ELEMENT,
       tag: "div",
+      children: [],
     });
   });
   it("simple text", () => {
@@ -24,6 +25,57 @@ describe("Parse", () => {
     expect(ast.children[0]).toStrictEqual({
       type: NodeTypes.TEXT,
       content: "some text",
+    });
+  });
+});
+
+describe("parse template happy path", () => {
+  it("parse simple union ", () => {
+    const ast = baseParse("<div>hi,{{ message }}</div>");
+    expect(ast.children[0]).toStrictEqual({
+      type: NodeTypes.ELEMENT,
+      tag: "div",
+      children: [
+        {
+          type: NodeTypes.TEXT,
+          content: "hi,",
+        },
+        {
+          type: NodeTypes.INTERPOLATION,
+          content: {
+            type: NodeTypes.SIMPLE_EXPRESSION,
+            content: "message",
+          },
+        },
+      ],
+    });
+  });
+
+  it("tags happy path", () => {
+    const ast = baseParse("<div><p>hi</p>{{ message }}</div>");
+    expect(ast.children[0]).toStrictEqual({
+      type: NodeTypes.ELEMENT,
+      tag: "div",
+      children: [
+        {
+          type: NodeTypes.ELEMENT,
+          tag: "p",
+          children: [
+            {
+              type: NodeTypes.TEXT,
+              content: "hi",
+            },
+          ],
+        },
+
+        {
+          type: NodeTypes.INTERPOLATION,
+          content: {
+            type: NodeTypes.SIMPLE_EXPRESSION,
+            content: "message",
+          },
+        },
+      ],
     });
   });
 });
