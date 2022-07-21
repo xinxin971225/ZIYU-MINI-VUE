@@ -8,15 +8,28 @@ export function baseParse(content: string) {
 function parseChildren(context) {
   const nodes: any[] = [];
   const s = context.source;
+  let node;
   if (s.startsWith("{{")) {
-    const node = parseInterpolation(context);
-    nodes.push(node);
+    node = parseInterpolation(context);
   } else if (/^<[a-z]/i.test(s)) {
-    const node = parseElement(context);
-    nodes.push(node);
+    node = parseElement(context);
   }
+  // default
+  if (!node) {
+    node = parseText(context);
+  }
+  nodes.push(node);
 
   return nodes;
+}
+
+function parseText(context) {
+  const content = context.source;
+  advanceBy(context, content.length);
+  return {
+    type: NodeTypes.TEXT,
+    content,
+  };
 }
 function parseElement(context) {
   const element = parseTag(context);
@@ -32,7 +45,7 @@ function parseTag(context) {
   advanceBy(context, match[0].length + 1);
   return {
     type: NodeTypes.ELEMENT,
-    tag: tag,
+    tag,
   };
 }
 function parseInterpolation(context) {
