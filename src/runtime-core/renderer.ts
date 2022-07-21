@@ -4,6 +4,7 @@ import { ShapeFlags } from "../share/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
 import { needUpdateProps } from "./componentUpdatePropsUtils";
 import { createAppApi } from "./createApp";
+import { queueJobs } from "./scheduler";
 import { Fragment, Text } from "./vnode";
 
 /**
@@ -77,6 +78,7 @@ export function createRenderer(options) {
   }
   const defaultProps = {};
   function patchElement(n1, n2, parentsInstance) {
+    console.log("patchElement");
     const oldProps = n1.props || defaultProps;
     const newProps = n2.props || defaultProps;
     // 这里在第二次更新的时候由于el 只有在mountElement 的时候挂到vnode上所以这里需要为后面更新的vnode挂上前面的el
@@ -304,13 +306,16 @@ export function createRenderer(options) {
   }
 
   function patchComponent(n1, n2) {
+    const instance = (n2.component = n1.component);
+
     if (needUpdateProps(n1, n2)) {
       // 1. 需要去更新props
-      const instance = (n2.component = n1.component);
       instance.props = n2.props;
       // 2. 需要去重新调用render
       instance.updateRunner();
     }
+    n2.el = n1.el; //这一句解决组件获取el的问题
+    instance.vnode = n2; //这一句暂且不知道解决什么问题
   }
   /**
    * 挂在组件
@@ -329,62 +334,76 @@ export function createRenderer(options) {
 
   function setupRenderEffect(instance: any, initialVNode, container, anchor) {
     // 将runner丢给instance，在更新时可以调用
-    instance.updateRunner = effect(() => {
-      const { proxy } = instance;
-      if (!instance.isMonuted) {
-        const subTree = (instance.subTree = instance.render.call(
-          proxysRefs(proxy)
-        ));
-        patch(null, subTree, container, instance, anchor);
-        // $el读取的是当前组件的dom 也就是说patch到element到时候直接内部的el挂到当前的instance上就ok鸟
-        // instance.el = subTree.el;
-        // 如果说每个组件都需要一个div做根，那这个做发一定能在每个组件都访问到div el；
-        // 但是vue3不需要根div，所以能不能拿到还得再测
+    instance.updateRunner = effect(
+      () => {
+        const { proxy } = instance;
+        if (!instance.isMonuted) {
+          const subTree = (instance.subTree = instance.render.call(
+            proxysRefs(proxy)
+          ));
+          patch(null, subTree, container, instance, anchor);
+          // $el读取的是当前组件的dom 也就是说patch到element到时候直接内部的el挂到当前的instance上就ok鸟
+          // instance.el = subTree.el;
+          // 如果说每个组件都需要一个div做根，那这个做发一定能在每个组件都访问到div el；
+          // 但是vue3不需要根div，所以能不能拿到还得再测
 
-        // 崔大推荐赋值到initialVNode上
-        // 初始化的时候el就是放在vnode的这个数据体上，所以保持一致的话还是赋值到instance的vnode上而不是instance上
-        initialVNode.el = subTree.el;
-        instance.isMonuted = true;
-      } else {
-        const preSubTree = instance.subTree;
-        const subTree = (instance.subTree = instance.render.call(
-          proxysRefs(proxy)
-        ));
-        patch(preSubTree, subTree, container, instance, anchor);
-        initialVNode.el = subTree.el;
+          // 崔大推荐赋值到initialVNode上
+          // 初始化的时候el就是放在vnode的这个数据体上，所以保持一致的话还是赋值到instance的vnode上而不是instance上
+          initialVNode.el = subTree.el;
+          instance.isMonuted = true;
+        } else {
+          const preSubTree = instance.subTree;
+          const subTree = (instance.subTree = instance.render.call(
+            proxysRefs(proxy)
+          ));
+          patch(preSubTree, subTree, container, instance, anchor);
+          initialVNode.el = subTree.el;
+        }
+      },
+      {
+        // 由于响应式变量的变更总会触发重新render，但实际上我们只关注最后一次变更的结果，所以采用一个异步更新的方式
+        // 采用scheduler的形式原因 -> 首屏加载需要有一个内容加载一个内容所以是同步去进行的，而更新只需要结果
+        scheduler: () => {
+          console.log("update");
+          queueJobs(instance.updateRunner);
+        },
       }
-    });
+    );
   }
   return {
     createApp: createAppApi(render),
     render,
   };
 }
-
 function getSequence(arr) {
-  const p = arr.slice();
+  const p = arr.slice(); //拷贝一份arr ->用于储存在对应元素在res中前面元素的位置
   const result = [0];
   let i, j, u, v, c;
   const len = arr.length;
   for (i = 0; i < len; i++) {
     const arrI = arr[i];
     if (arrI !== 0) {
-      j = result[result.length - 1];
+      j = result[result.length - 1]; //取result的最后一个的值 -> 对应arr里面的index
       if (arr[j] < arrI) {
-        p[i] = j;
-        result.push(i);
+        //拿出目前序列的最大值去与当前的值做对比
+        p[i] = j; //记录res位置
+        result.push(i); // 添加大的值
         continue;
       }
+
+      // 二分查找 -> 当前元素在res中对应的最接近的位置
       u = 0;
       v = result.length - 1;
       while (u < v) {
         c = (u + v) >> 1;
+
         if (arr[result[c]] < arrI) {
           u = c + 1;
         } else {
           v = c;
         }
       }
+      // 贪心直接把对应的最接近的位置给替换掉
       if (arrI < arr[result[u]]) {
         if (u > 0) {
           p[i] = result[u - 1];
@@ -393,6 +412,7 @@ function getSequence(arr) {
       }
     }
   }
+  // 计算完最大长度后对应的下标在最后一次替换完会有一个错误 -> 通过p的回溯，倒序把下标还原
   u = result.length;
   v = result[u - 1];
   while (u-- > 0) {

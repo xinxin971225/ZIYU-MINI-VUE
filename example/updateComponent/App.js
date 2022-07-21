@@ -1,13 +1,29 @@
-import { h, ref } from "../../lib/ziyu-mini-vue.esm.js";
+import {
+  getCurrentInstance,
+  h,
+  ref,
+  nextTick,
+} from "../../lib/ziyu-mini-vue.esm.js";
 import { propsComponent } from "./propsComponent.js";
 export const App = {
   name: "App",
   setup() {
+    const instance = getCurrentInstance();
+
     const count = ref(0);
     const onClick = () => {
-      count.value++;
+      for (let i = 1; i < 100; i++) {
+        console.log("update");
+        count.value = i;
+      }
+      console.log("instance", instance);
+      nextTick(() => {
+        console.log("instance", instance);
+      });
     };
+
     const propsData = ref("123321");
+    window.propsData = propsData;
     const updataPropsData = () => {
       propsData.value += "2";
     };
