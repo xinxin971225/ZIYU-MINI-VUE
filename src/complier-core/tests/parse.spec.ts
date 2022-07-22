@@ -78,4 +78,10 @@ describe("parse template happy path", () => {
       ],
     });
   });
+
+  it("no close tag should throw error", () => {
+    expect(() => {
+      const ast = baseParse("<div><p></div>");
+    }).toThrowError("缺失闭合标签：p");
+  });
 });
