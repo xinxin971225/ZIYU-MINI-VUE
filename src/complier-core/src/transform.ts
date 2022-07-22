@@ -1,7 +1,13 @@
-export function transform(root, options) {
+export function transform(root, options = {}) {
   const context = createRootContext(root, options);
   traverseNode(root, context);
+  createGenCode(root);
 }
+
+function createGenCode(root) {
+  root.genCodeNode = root.children[0];
+}
+
 /**
  * 创建一个全局上下文对象
  * @param root

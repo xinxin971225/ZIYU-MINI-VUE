@@ -1,0 +1,3 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ast -> render  happy path simple str 1`] = `"export function render(_ctx, _cache){ return \\"hi\\" }"`;
