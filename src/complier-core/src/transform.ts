@@ -1,7 +1,15 @@
+import { NodeTypes } from "./ast";
+import { helpersNameMap, TO_DISPLAY_STRING } from "./runtimeHelper";
+
 export function transform(root, options = {}) {
   const context = createRootContext(root, options);
   traverseNode(root, context);
   createGenCode(root);
+  createHelpers(root, context);
+}
+
+function createHelpers(root, context) {
+  root.helpers = [...context.helpers.keys()];
 }
 
 function createGenCode(root) {
@@ -15,10 +23,18 @@ function createGenCode(root) {
  * @returns
  */
 function createRootContext(root, options) {
-  return {
+  const context = {
     root,
     nodeTransforms: options.nodeTransforms || [],
+    helpers: new Map(),
+    addHelper: (key) => {
+      context.helpers.set(key, 1);
+    },
+    getHelperName: (key) => {
+      return helpersNameMap[key];
+    },
   };
+  return context;
 }
 
 /**
@@ -30,12 +46,22 @@ function traverseNode(node, context) {
   // if (node.type === NodeTypes.TEXT) {
   //   node.content += "ziyu";
   // }
-  const { nodeTransforms } = context;
+  const { nodeTransforms, addHelper, getHelperName } = context;
   for (let i = 0; i < nodeTransforms.length; i++) {
     const transformFn = nodeTransforms[i];
     transformFn(node);
   }
-  traverseNodeChildren(node, context);
+  switch (node.type) {
+    case NodeTypes.INTERPOLATION:
+      addHelper(getHelperName(TO_DISPLAY_STRING));
+      break;
+    case NodeTypes.ROOT:
+    case NodeTypes.ELEMENT:
+      traverseNodeChildren(node, context);
+      break;
+    default:
+      break;
+  }
 }
 
 function traverseNodeChildren(node, context) {

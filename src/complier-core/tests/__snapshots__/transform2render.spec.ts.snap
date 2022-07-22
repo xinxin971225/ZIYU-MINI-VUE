@@ -1,3 +1,11 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`ast -> render  happy path simple str 1`] = `"export function render(_ctx, _cache){ return \\"hi\\" }"`;
+exports[`ast -> render  happy path simple interpolation 1`] = `
+"import { toDisplayString as _toDisplayString } from \\"vue\\"
+export function render(_ctx, _cache){ return _toDisplayString(_ctx.message) }"
+`;
+
+exports[`ast -> render  happy path simple str 1`] = `
+"
+export function render(_ctx, _cache){ return \\"hi\\" }"
+`;
