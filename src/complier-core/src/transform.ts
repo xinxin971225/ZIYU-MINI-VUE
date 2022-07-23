@@ -13,7 +13,10 @@ function createHelpers(root, context) {
 }
 
 function createGenCode(root) {
-  root.genCodeNode = root.children[0];
+  const children = root.children[0];
+  if (children.type === NodeTypes.ELEMENT) {
+  }
+  root.genCodeNode = children;
 }
 
 /**
@@ -46,10 +49,15 @@ function traverseNode(node, context) {
   // if (node.type === NodeTypes.TEXT) {
   //   node.content += "ziyu";
   // }
+  const onExitFn: any = [];
   const { nodeTransforms, addHelper, getHelperName } = context;
   for (let i = 0; i < nodeTransforms.length; i++) {
     const transformFn = nodeTransforms[i];
-    transformFn(node);
+    // 对内部节点的破坏性修改，应该在最后执行
+    const onExit = transformFn(node, context);
+    if (onExit) {
+      onExitFn.push(onExit);
+    }
   }
   switch (node.type) {
     case NodeTypes.INTERPOLATION:
@@ -61,6 +69,10 @@ function traverseNode(node, context) {
       break;
     default:
       break;
+  }
+  let i = onExitFn.length;
+  while (i--) {
+    onExitFn[i]();
   }
 }
 

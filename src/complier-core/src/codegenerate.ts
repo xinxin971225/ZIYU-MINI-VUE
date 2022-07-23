@@ -1,5 +1,11 @@
+import { isString } from "../../share";
 import { NodeTypes } from "./ast";
-import { helpersNameMap, TO_DISPLAY_STRING } from "./runtimeHelper";
+import {
+  CREATE_ELEMENT_BLOCK,
+  helpersNameMap,
+  OPEN_BLOCK,
+  TO_DISPLAY_STRING,
+} from "./runtimeHelper";
 
 export function generate(ast) {
   const context = createGenerateContext();
@@ -7,7 +13,8 @@ export function generate(ast) {
   getFunctionPreamble(context, ast);
   push("export ");
   getFunctionNameAndArgs(context);
-  getNode(context, ast.genCodeNode);
+  console.log(JSON.stringify(ast, null, 2));
+  genNode(context, ast.genCodeNode);
   push(" }");
   return {
     code: context.code,
@@ -49,7 +56,7 @@ function getFunctionNameAndArgs(context) {
   push(`function ${functionName}(${argStr}){`);
   push(" return");
 }
-function getNode(context, node) {
+function genNode(context, node) {
   switch (node.type) {
     case NodeTypes.TEXT:
       getTextCode(context, node);
@@ -60,10 +67,42 @@ function getNode(context, node) {
     case NodeTypes.SIMPLE_EXPRESSION:
       getExpression(context, node);
       break;
+    case NodeTypes.ELEMENT:
+      getElement(context, node);
+      break;
+    case NodeTypes.COMPOUND_EXPRESSION:
+      getCompoundExpression(context, node);
+      break;
     default:
       break;
   }
 }
+
+function getCompoundExpression(context, node) {
+  const { push } = context;
+  const { children } = node;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    if (isString(child)) {
+      push(child);
+    } else {
+      genNode(context, child);
+    }
+  }
+}
+function getElement(context, node) {
+  const { push, getHelperName } = context;
+  const { tag } = node;
+  push(
+    ` (_${getHelperName(OPEN_BLOCK)}(), _${getHelperName(
+      CREATE_ELEMENT_BLOCK
+    )}("${tag}", null`
+  );
+  const child = node.children[0];
+  genNode(context, child);
+  push(", 1 /* TEXT */))");
+}
+
 function getTextCode(context, node) {
   const { push } = context;
 
@@ -74,7 +113,7 @@ function getInterpolation(context: any, node: any) {
   const { push, getHelperName } = context;
   const rawContent = node.content;
   push(` _${getHelperName(TO_DISPLAY_STRING)}(`);
-  getNode(context, rawContent);
+  genNode(context, rawContent);
   push(")");
 }
 function getExpression(context: any, node: any) {

@@ -1,7 +1,8 @@
 {
   "jest.autoRun": {
-    "watch": true,
+    "watch": false,
     "onSave": "test-file",
     "onStartup": ["all-tests"]
-  }
+  },
+  "git.autofetch": true
 }
