@@ -13,7 +13,7 @@ export function generate(ast) {
   getFunctionPreamble(context, ast);
   push("export ");
   getFunctionNameAndArgs(context);
-  console.log(JSON.stringify(ast, null, 2));
+
   genNode(context, ast.genCodeNode);
   push(" }");
   return {
@@ -54,7 +54,7 @@ function getFunctionNameAndArgs(context) {
   const args = ["_ctx", "_cache"];
   const argStr = args.join(", ");
   push(`function ${functionName}(${argStr}){`);
-  push(" return");
+  push(" return ");
 }
 function genNode(context, node) {
   switch (node.type) {
@@ -92,27 +92,41 @@ function getCompoundExpression(context, node) {
 }
 function getElement(context, node) {
   const { push, getHelperName } = context;
-  const { tag } = node;
+  const { tag, props, genCodeNode } = node;
   push(
-    ` (_${getHelperName(OPEN_BLOCK)}(), _${getHelperName(
+    `(_${getHelperName(OPEN_BLOCK)}(), _${getHelperName(
       CREATE_ELEMENT_BLOCK
-    )}("${tag}", null`
+    )}( `
   );
-  const child = node.children[0];
-  genNode(context, child);
+  const fixValList = fixUndefinedVal([tag, props, genCodeNode]);
+  genNodeList(fixValList, context);
   push(", 1 /* TEXT */))");
+}
+function genNodeList(nodes, context) {
+  const { push } = context;
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (isString(node)) {
+      push(`${node}, `);
+    } else {
+      genNode(context, node);
+    }
+  }
+}
+function fixUndefinedVal(vals) {
+  return vals.map((v) => v || "null");
 }
 
 function getTextCode(context, node) {
   const { push } = context;
 
   const text = node.content;
-  push(` "${text}"`);
+  push(`"${text}"`);
 }
 function getInterpolation(context: any, node: any) {
   const { push, getHelperName } = context;
   const rawContent = node.content;
-  push(` _${getHelperName(TO_DISPLAY_STRING)}(`);
+  push(`_${getHelperName(TO_DISPLAY_STRING)}(`);
   genNode(context, rawContent);
   push(")");
 }

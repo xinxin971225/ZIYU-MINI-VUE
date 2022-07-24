@@ -1,9 +1,6 @@
 import { NodeTypes } from "../ast";
-function isTextOrInterpolation(node) {
-  const { type } = node;
+import { isTextOrInterpolation } from "../utils";
 
-  return type === NodeTypes.INTERPOLATION || type === NodeTypes.TEXT;
-}
 export function transformElementChildren(node, context) {
   if (node.type === NodeTypes.ELEMENT) {
     return () => {
