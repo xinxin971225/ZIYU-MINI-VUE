@@ -3,7 +3,6 @@ import { NodeTypes } from "./ast";
 import {
   CREATE_ELEMENT_BLOCK,
   helpersNameMap,
-  OPEN_BLOCK,
   TO_DISPLAY_STRING,
 } from "./runtimeHelper";
 
@@ -11,7 +10,7 @@ export function generate(ast) {
   const context = createGenerateContext();
   const { push } = context;
   getFunctionPreamble(context, ast);
-  push("export ");
+  push("return ");
   getFunctionNameAndArgs(context);
 
   genNode(context, ast.genCodeNode);
@@ -24,12 +23,10 @@ export function generate(ast) {
 function getFunctionPreamble(context, ast) {
   const { push } = context;
   const VueBinging = "vue";
-  const aliasHelper = (s) => `${s} as _${s}`;
+  const aliasHelper = (s) => `${s} : _${s}`;
   if (ast.helpers.length) {
     push(
-      `import { ${ast.helpers
-        .map(aliasHelper)
-        .join(", ")} } from "${VueBinging}"`
+      `const { ${ast.helpers.map(aliasHelper).join(", ")} } = ${VueBinging}`
     );
   }
   push("\n");
@@ -93,14 +90,10 @@ function getCompoundExpression(context, node) {
 function getElement(context, node) {
   const { push, getHelperName } = context;
   const { tag, props, genCodeNode } = node;
-  push(
-    `(_${getHelperName(OPEN_BLOCK)}(), _${getHelperName(
-      CREATE_ELEMENT_BLOCK
-    )}( `
-  );
+  push(`_${getHelperName(CREATE_ELEMENT_BLOCK)}( `);
   const fixValList = fixUndefinedVal([tag, props, genCodeNode]);
   genNodeList(fixValList, context);
-  push(", 1 /* TEXT */))");
+  push(")");
 }
 function genNodeList(nodes, context) {
   const { push } = context;

@@ -336,10 +336,11 @@ export function createRenderer(options) {
     // 将runner丢给instance，在更新时可以调用
     instance.updateRunner = effect(
       () => {
-        const { proxy } = instance;
+        const proxy = proxysRefs(instance.proxy);
         if (!instance.isMonuted) {
           const subTree = (instance.subTree = instance.render.call(
-            proxysRefs(proxy)
+            proxy,
+            proxy
           ));
           patch(null, subTree, container, instance, anchor);
           // $el读取的是当前组件的dom 也就是说patch到element到时候直接内部的el挂到当前的instance上就ok鸟
@@ -354,7 +355,8 @@ export function createRenderer(options) {
         } else {
           const preSubTree = instance.subTree;
           const subTree = (instance.subTree = instance.render.call(
-            proxysRefs(proxy)
+            proxy,
+            proxy
           ));
           patch(preSubTree, subTree, container, instance, anchor);
           initialVNode.el = subTree.el;

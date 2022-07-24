@@ -4,6 +4,7 @@ import { initProps } from "./componentProps";
 import { componentPublicInstanceHandlers } from "./componentPublicInstance";
 import { initSlots } from "./componentSlots";
 let currentInstance = null;
+let compiler;
 export function createComponentInstance(vnode: any, parentsInstance) {
   const component: any = {
     vnode,
@@ -75,7 +76,9 @@ function handleSetupResult(instance, setupResult: any) {
  */
 function finishComponentSetup(instance: any) {
   const Component = instance.type;
-  if (Component.render) {
+  if (compiler && !Component.render) {
+    instance.render = compiler(Component.template);
+  } else {
     instance.render = Component.render;
   }
 }
@@ -85,4 +88,8 @@ export function getCurrentInstance() {
 }
 function setCurrentInstance(instance) {
   currentInstance = instance;
+}
+
+export function generateCompiler(_compiler) {
+  compiler = _compiler;
 }
