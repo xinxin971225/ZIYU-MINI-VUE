@@ -8,6 +8,7 @@ import { createVNode } from "./vnode";
  */
 export function createAppApi(render) {
   /**
+   * 内层就是没有custom render的版本
    * @param rootComponent 根组件
    */
   return function createApp(rootComponent) {

@@ -74,11 +74,9 @@ export function createRenderer(options) {
     } else {
       patchElement(n1, n2, parentsInstance);
     }
-    // TODO更新
   }
   const defaultProps = {};
   function patchElement(n1, n2, parentsInstance) {
-    console.log("patchElement");
     const oldProps = n1.props || defaultProps;
     const newProps = n2.props || defaultProps;
     // 这里在第二次更新的时候由于el 只有在mountElement 的时候挂到vnode上所以这里需要为后面更新的vnode挂上前面的el
