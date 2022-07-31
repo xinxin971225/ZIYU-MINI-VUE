@@ -12,5 +12,26 @@
 - [render](./renderer.ts)就是整个模块运行的起点，在这个过程中，所有的 dom 元素与组件对象都会先被转换成虚拟节点 vnode 在进行处理，核心是 patch 方法，在遍历整个虚拟节点 vnode 的时候递归用到 patch 方法。
 
 - 整个 patch 流程主要分为两个大的分支`processElement`处理 element 类型与`processComponent`处理组件类型
+
   - **processElement**
+
+    - element 类型处理分两种情况
+
+    1. 初始化挂在元素 mountElement
+
+       初始化的时候主要做 3 件事
+
+       1. 创建 node 节点，
+       2. 设置对于属性，
+       3. 插入页面现有元素当中
+
+       在这个过程中，如果遇到 children 会去递归调用 patch，重复上面过程初始化 children 的元素
+
+    2. 更新元素 patchelement
+
+       对比更新，采用 diff 算法，最小程度调用 dom api 更新页面
+
   - **processComponent**
+    - component 类型处理分两种情况
+      1. 初始化挂在元素 mountComponent
+      2. 更新元素 patchComponent
