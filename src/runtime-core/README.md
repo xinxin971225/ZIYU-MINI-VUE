@@ -13,9 +13,9 @@
 
 - 整个 patch 流程主要分为两个大的分支`processElement`处理 element 类型与`processComponent`处理组件类型
 
-  - **processElement**
+  > **processElement**
 
-    - element 类型处理分两种情况
+  - element 类型处理分两种情况
 
     1. 初始化挂在元素 mountElement
 
@@ -31,7 +31,19 @@
 
        对比更新，采用 diff 算法，最小程度调用 dom api 更新页面
 
-  - **processComponent**
-    - component 类型处理分两种情况
-      1. 初始化挂在元素 mountComponent
-      2. 更新元素 patchComponent
+  > **processComponent**
+
+  - component 类型处理分两种情况
+
+    1. 初始化挂在组件 mountComponent
+
+       初始化组件主要做 3 件事
+
+       1. 将组件包装为一个容器 instance->并调用组件中定义的 setup
+       2. 根据 setup 返回值传给组件定义的 render 方法生成 vNodeTree
+       3. 通过 render 返回的 vNode 去调用 patch 方法
+
+    2. 更新组件 patchComponent
+
+
+        更新组件与初始化组件的区别在于会有一个新老instance的对比你过程，只需要更新到新的instance然后去重新调用render方法去获取新的vNodeTree与oldvNodeTree进行patch即可
